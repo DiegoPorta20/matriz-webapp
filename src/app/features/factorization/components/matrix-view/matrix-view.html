@@ -1,0 +1,27 @@
+<figure class="matrix">
+  <figcaption class="matrix__caption">
+    <span class="matrix__title">{{ title() }}</span>
+    <span class="matrix__dimensions">{{ dimensions() }}</span>
+  </figcaption>
+
+  @if (description()) {
+    <p class="matrix__description">{{ description() }}</p>
+  }
+
+  <div class="matrix__scroll">
+    <table class="matrix__table">
+      <caption class="visually-hidden">
+        {{ title() }}, {{ dimensions() }}
+      </caption>
+      <tbody>
+        @for (row of matrix(); track $index; let rowIndex = $index) {
+          <tr>
+            @for (value of row; track $index) {
+              <td>{{ value | matrixNumber }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</figure>

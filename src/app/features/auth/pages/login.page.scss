@@ -1,0 +1,33 @@
+@use 'styles/tokens' as tokens;
+
+.login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: tokens.$spacing-md;
+}
+
+.login__card {
+  width: 100%;
+  max-width: 24rem;
+}
+
+.login__card form {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$spacing-sm;
+  margin-top: tokens.$spacing-md;
+}
+
+.login__error {
+  display: flex;
+  align-items: center;
+  gap: tokens.$spacing-xs;
+  margin: 0 0 tokens.$spacing-sm;
+  color: var(--mat-sys-error);
+}
+
+.login__submit {
+  align-self: stretch;
+}

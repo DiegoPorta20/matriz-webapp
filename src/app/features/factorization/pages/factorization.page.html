@@ -1,0 +1,59 @@
+<div class="page-container">
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Matriz de entrada</mat-card-title>
+      <mat-card-subtitle>
+        Edita los valores y ajusta las dimensiones antes de factorizar
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <app-matrix-editor [isBusy]="isLoading()" (factorize)="factorize($event)" />
+    </mat-card-content>
+  </mat-card>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Calculando la factorización" />
+  }
+
+  @if (error(); as apiError) {
+    <mat-card class="results__error" appearance="outlined" role="alert">
+      <mat-card-content>
+        <p class="results__error-title">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          {{ apiError.message }}
+        </p>
+        @if (apiError.details.length > 0) {
+          <ul class="results__error-details">
+            @for (detail of apiError.details; track detail) {
+              <li>{{ detail }}</li>
+            }
+          </ul>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (result(); as factorization) {
+    <section class="results" aria-label="Resultado de la factorización">
+      <div class="results__matrices">
+        <app-matrix-view title="Matriz original" [matrix]="factorization.original" />
+        <app-matrix-view
+          title="Q"
+          description="Matriz ortogonal"
+          [matrix]="factorization.q"
+        />
+        <app-matrix-view
+          title="R"
+          description="Matriz triangular superior"
+          [matrix]="factorization.r"
+        />
+      </div>
+
+      <div class="results__statistics">
+        <app-statistics-card title="Estadísticas de Q" [statistics]="factorization.statistics.q" />
+        <app-statistics-card title="Estadísticas de R" [statistics]="factorization.statistics.r" />
+      </div>
+    </section>
+  }
+</div>

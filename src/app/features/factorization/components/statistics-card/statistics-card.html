@@ -1,0 +1,38 @@
+<mat-card class="statistics" appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>{{ title() }}</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <dl class="statistics__list">
+      <div class="statistics__item">
+        <dt>Máximo</dt>
+        <dd>{{ statistics().max | matrixNumber }}</dd>
+      </div>
+      <div class="statistics__item">
+        <dt>Mínimo</dt>
+        <dd>{{ statistics().min | matrixNumber }}</dd>
+      </div>
+      <div class="statistics__item">
+        <dt>Promedio</dt>
+        <dd>{{ statistics().average | matrixNumber }}</dd>
+      </div>
+      <div class="statistics__item">
+        <dt>Suma</dt>
+        <dd>{{ statistics().sum | matrixNumber }}</dd>
+      </div>
+      <div class="statistics__item">
+        <dt>Diagonal</dt>
+        <dd class="statistics__diagonal">
+          @if (statistics().isDiagonal) {
+            <mat-icon class="statistics__icon--yes" aria-hidden="true">check_circle</mat-icon>
+            <span>Sí</span>
+          } @else {
+            <mat-icon class="statistics__icon--no" aria-hidden="true">cancel</mat-icon>
+            <span>No</span>
+          }
+        </dd>
+      </div>
+    </dl>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,44 @@
+@use 'styles/tokens' as tokens;
+
+.matrix {
+  margin: 0;
+}
+
+.matrix__caption {
+  display: flex;
+  align-items: baseline;
+  gap: tokens.$spacing-sm;
+  margin-bottom: tokens.$spacing-xs;
+}
+
+.matrix__title {
+  font: var(--mat-sys-title-medium);
+}
+
+.matrix__dimensions {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.matrix__description {
+  margin: 0 0 tokens.$spacing-sm;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.matrix__scroll {
+  overflow-x: auto;
+}
+
+.matrix__table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.matrix__table td {
+  border: 1px solid var(--mat-sys-outline-variant);
+  padding: tokens.$spacing-xs tokens.$spacing-sm;
+  text-align: right;
+  min-width: tokens.$matrix-cell-width;
+  white-space: nowrap;
+}

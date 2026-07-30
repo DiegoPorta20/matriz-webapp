@@ -1,0 +1,43 @@
+@use 'styles/tokens' as tokens;
+
+.page-container > * {
+  margin-bottom: tokens.$spacing-md;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$spacing-lg;
+}
+
+.results__matrices,
+.results__statistics {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$spacing-md;
+}
+
+.results__error-title {
+  display: flex;
+  align-items: center;
+  gap: tokens.$spacing-xs;
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+.results__error-details {
+  margin: tokens.$spacing-sm 0 0;
+  padding-left: tokens.$spacing-lg;
+}
+
+@media (min-width: tokens.$breakpoint-tablet) {
+  .results__statistics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: tokens.$breakpoint-desktop) {
+  .results__matrices {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

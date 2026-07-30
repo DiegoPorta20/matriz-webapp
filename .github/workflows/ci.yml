@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  verify:
+    name: verificar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests con cobertura
+        # El umbral esta en karma.conf.js, y el launcher ChromeHeadlessCI aporta
+        # --no-sandbox, que Chrome necesita dentro del contenedor del runner.
+        run: npm run test:ci
+
+      - name: Compilar
+        run: npm run build
+
+  image:
+    name: imagen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # En produccion la SPA se sirve desde S3, no desde este contenedor. Se
+      # sigue construyendo porque es el que levanta docker compose en local, y un
+      # Dockerfile que nadie verifica se rompe sin que nadie se entere.
+      - name: Construir
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
