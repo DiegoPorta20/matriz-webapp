@@ -1,5 +1,15 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
+# Entorno. El CLI de Angular no lo incluye, pero si alguien crea un .env aqui no
+# debe acabar en el repositorio.
+#
+# Ojo: en una SPA cualquier valor de configuracion termina dentro del bundle y es
+# publico. Esto protege de un descuido, no convierte el .env en un sitio seguro
+# para un secreto.
+.env
+.env.local
+.env.*.local
+
 # Compiled output
 /dist
 /tmp
