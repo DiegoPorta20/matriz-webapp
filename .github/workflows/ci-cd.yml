@@ -1,0 +1,177 @@
+name: CI/CD
+
+# Un solo workflow para verificar y desplegar. Lo que separa las dos cosas es la
+# condicion de los jobs de despliegue.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  verify:
+    name: verificar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      # Los scripts pre* de package.json generan src/environments/environment.ts
+      # a partir de API_BASE_URL antes de lintar, testear o compilar. Aqui se usa
+      # el valor por defecto: lo que se verifica es el codigo, no la URL.
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests con cobertura
+        # El umbral esta en karma.conf.js, y el launcher ChromeHeadlessCI aporta
+        # --no-sandbox, que Chrome necesita dentro del contenedor del runner.
+        run: npm run test:ci
+
+      - name: Compilar
+        run: npm run build
+
+  image:
+    name: imagen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # En produccion la SPA se sirve desde S3, no desde este contenedor. Se sigue
+      # construyendo porque es el que levanta docker compose en local, y un
+      # Dockerfile que nadie verifica se rompe sin que nadie se entere.
+      - name: Construir
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: desplegar
+    needs: [verify, image]
+    # ESTA CONDICION ES LO QUE EVITA DESPLEGAR EN CADA PULL REQUEST.
+    # Si se toca, comprobar que un pull request sigue sin llegar a AWS.
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Construir la SPA
+        # Aqui si importa la URL: una SPA no tiene entorno de ejecucion en el
+        # servidor, asi que API_BASE_URL se resuelve al compilar y queda dentro del
+        # bundle. Hay un bundle por entorno, y el valor es publico.
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Autenticar en AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: gha-deploy-frontend-${{ github.run_id }}
+
+      - name: Subir los ficheros con hash
+        # Primero los assets y despues el index. Si index.html llegara antes, un
+        # navegador podria pedir un bundle que todavia no existe.
+        run: |
+          aws s3 sync dist/frontend/browser "s3://${{ vars.S3_BUCKET }}" \
+            --exclude index.html \
+            --cache-control 'public, max-age=31536000, immutable' \
+            --delete
+
+      - name: Subir index.html sin cachear
+        run: |
+          aws s3 cp dist/frontend/browser/index.html \
+            "s3://${{ vars.S3_BUCKET }}/index.html" \
+            --cache-control 'no-cache, no-store, must-revalidate'
+
+      - name: Invalidar CloudFront
+        # Solo index.html y la raiz: los demas ficheros llevan hash en el nombre,
+        # asi que su contenido no cambia nunca e invalidarlos seria pagar por nada.
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id '${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}' \
+            --paths '/index.html' '/' \
+            --no-cli-pager
+
+  smoke:
+    name: smoke test
+    needs: deploy
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: La SPA se sirve
+        run: |
+          curl -fsS --retry 5 --retry-delay 5 -o /dev/null \
+            "${{ vars.PUBLIC_BASE_URL }}/"
+
+      - name: Una ruta profunda devuelve la SPA y no un 404
+        # Comprueba la custom error response de CloudFront, que es el equivalente
+        # del try_files de nginx. Sin ella, recargar en /factorization da 404.
+        run: |
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' \
+            "${{ vars.PUBLIC_BASE_URL }}/factorization")
+          echo "GET /factorization -> $codigo"
+          [ "$codigo" = "200" ] || exit 1
+
+      - name: Los headers de seguridad estan presentes
+        # En local los pone nginx; en produccion, una response headers policy de
+        # CloudFront. Es configuracion duplicada, y ya desaparecio una vez sin que
+        # nada fallara, asi que se comprueba en cada despliegue.
+        run: |
+          set -euo pipefail
+          headers=$(curl -sI "${{ vars.PUBLIC_BASE_URL }}/")
+          for h in x-content-type-options x-frame-options referrer-policy content-security-policy; do
+            echo "$headers" | grep -qi "^$h:" || { echo "Falta el header $h"; exit 1; }
+          done
+          echo "Los headers de seguridad estan presentes"
+
+      - name: La SPA puede llamar a la API desde su origen
+        # Con URL absoluta la llamada es de origen cruzado, asi que CORS pasa a ser
+        # carga funcional: si CORS_ALLOWED_ORIGINS de go-api no incluye este
+        # origen, la aplicacion no funciona aunque todo lo demas este bien.
+        run: |
+          set -euo pipefail
+          respuesta=$(curl -sI -X OPTIONS "${{ vars.API_BASE_URL }}/factorization" \
+            -H "Origin: ${{ vars.PUBLIC_BASE_URL }}" \
+            -H 'Access-Control-Request-Method: POST' \
+            -H 'Access-Control-Request-Headers: authorization,content-type')
+
+          echo "$respuesta" | grep -qi 'access-control-allow-origin' \
+            || { echo "go-api no permite el origen ${{ vars.PUBLIC_BASE_URL }}"; exit 1; }
+
+          echo "CORS configurado correctamente"
