@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { AuthService } from './auth.service';
+import { API_BASE_PATH } from '../config/api.config';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -32,7 +33,7 @@ describe('AuthService', () => {
   it('guarda el token que devuelve la API', () => {
     service.login({ username: 'demo', password: 'secret' }).subscribe();
 
-    const request = httpMock.expectOne('/api/v1/auth/login');
+    const request = httpMock.expectOne(`${API_BASE_PATH}/auth/login`);
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ username: 'demo', password: 'secret' });
 

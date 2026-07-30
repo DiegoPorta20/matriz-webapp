@@ -7,6 +7,7 @@ import { authInterceptor } from '../auth/auth.interceptor';
 import { AuthService } from '../auth/auth.service';
 import type { ApiError } from '../models/api-response.model';
 import { apiErrorInterceptor } from './api-error.interceptor';
+import { API_BASE_PATH } from '../config/api.config';
 
 describe('authInterceptor y apiErrorInterceptor', () => {
   let http: HttpClient;
@@ -38,29 +39,29 @@ describe('authInterceptor y apiErrorInterceptor', () => {
   });
 
   it('no añade Authorization cuando no hay sesión', () => {
-    http.get('/api/v1/anything').subscribe();
+    http.get(`${API_BASE_PATH}/anything`).subscribe();
 
-    expect(httpMock.expectOne('/api/v1/anything').request.headers.has('Authorization')).toBe(false);
+    expect(httpMock.expectOne(`${API_BASE_PATH}/anything`).request.headers.has('Authorization')).toBe(false);
   });
 
   it('añade el token a las peticiones cuando hay sesión', () => {
     givenAuthenticated('signed-token');
 
-    http.get('/api/v1/anything').subscribe();
+    http.get(`${API_BASE_PATH}/anything`).subscribe();
 
-    const request = httpMock.expectOne('/api/v1/anything');
+    const request = httpMock.expectOne(`${API_BASE_PATH}/anything`);
     expect(request.request.headers.get('Authorization')).toBe('Bearer signed-token');
   });
 
   it('normaliza el envoltorio de error de la API', () => {
     let captured: ApiError | undefined;
-    http.post('/api/v1/factorization', {}).subscribe({
+    http.post(`${API_BASE_PATH}/factorization`, {}).subscribe({
       error: (error: ApiError) => {
         captured = error;
       },
     });
 
-    httpMock.expectOne('/api/v1/factorization').flush(
+    httpMock.expectOne(`${API_BASE_PATH}/factorization`).flush(
       {
         success: false,
         message: 'Invalid matrix',
@@ -77,13 +78,13 @@ describe('authInterceptor y apiErrorInterceptor', () => {
 
   it('da un mensaje legible cuando el servidor no responde', () => {
     let captured: ApiError | undefined;
-    http.get('/api/v1/anything').subscribe({
+    http.get(`${API_BASE_PATH}/anything`).subscribe({
       error: (error: ApiError) => {
         captured = error;
       },
     });
 
-    httpMock.expectOne('/api/v1/anything').error(new ProgressEvent('error'), { status: 0 });
+    httpMock.expectOne(`${API_BASE_PATH}/anything`).error(new ProgressEvent('error'), { status: 0 });
 
     expect(captured?.status).toBe(0);
     expect(captured?.message).toContain('conexión');
@@ -91,14 +92,14 @@ describe('authInterceptor y apiErrorInterceptor', () => {
 
   it('no filtra detalles internos cuando el error no trae el envoltorio', () => {
     let captured: ApiError | undefined;
-    http.get('/api/v1/anything').subscribe({
+    http.get(`${API_BASE_PATH}/anything`).subscribe({
       error: (error: ApiError) => {
         captured = error;
       },
     });
 
     httpMock
-      .expectOne('/api/v1/anything')
+      .expectOne(`${API_BASE_PATH}/anything`)
       .flush('<html>nginx internal error at /usr/share/nginx</html>', {
         status: 500,
         statusText: 'Internal Server Error',
@@ -111,10 +112,10 @@ describe('authInterceptor y apiErrorInterceptor', () => {
   it('cierra la sesión y lleva al login cuando la API responde 401', () => {
     givenAuthenticated('expired-token');
 
-    http.get('/api/v1/factorization').subscribe({ error: () => undefined });
+    http.get(`${API_BASE_PATH}/factorization`).subscribe({ error: () => undefined });
 
     httpMock
-      .expectOne('/api/v1/factorization')
+      .expectOne(`${API_BASE_PATH}/factorization`)
       .flush(
         { success: false, message: 'Access token is invalid or has expired', errors: [] },
         { status: 401, statusText: 'Unauthorized' },
@@ -125,12 +126,12 @@ describe('authInterceptor y apiErrorInterceptor', () => {
   });
 
   it('no cierra sesion ni redirige cuando el 401 viene del propio login', () => {
-    http.post('/api/v1/auth/login', { username: 'demo', password: 'wrong' }).subscribe({
+    http.post(`${API_BASE_PATH}/auth/login`, { username: 'demo', password: 'wrong' }).subscribe({
       error: () => undefined,
     });
 
     httpMock
-      .expectOne('/api/v1/auth/login')
+      .expectOne(`${API_BASE_PATH}/auth/login`)
       .flush(
         { success: false, message: 'Invalid username or password', errors: [] },
         { status: 401, statusText: 'Unauthorized' },
@@ -141,7 +142,7 @@ describe('authInterceptor y apiErrorInterceptor', () => {
 
   const givenAuthenticated = (token: string): void => {
     authService.login({ username: 'demo', password: 'secret' }).subscribe();
-    httpMock.expectOne('/api/v1/auth/login').flush({
+    httpMock.expectOne(`${API_BASE_PATH}/auth/login`).flush({
       success: true,
       data: { accessToken: token, tokenType: 'Bearer', expiresIn: 3600 },
       message: 'ok',

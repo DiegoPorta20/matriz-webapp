@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import type { FactorizationResult } from '../models/factorization.model';
 import { FactorizationApiService } from './factorization-api.service';
+import { API_BASE_PATH } from '../../../core/config/api.config';
 
 describe('FactorizationApiService', () => {
   let service: FactorizationApiService;
@@ -25,7 +26,7 @@ describe('FactorizationApiService', () => {
   it('envía la matriz en el campo que espera go-api', () => {
     service.factorize([[1, 2], [3, 4]]).subscribe();
 
-    const request = httpMock.expectOne('/api/v1/factorization');
+    const request = httpMock.expectOne(`${API_BASE_PATH}/factorization`);
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ matrix: [[1, 2], [3, 4]] });
 
@@ -38,7 +39,7 @@ describe('FactorizationApiService', () => {
       received = result;
     });
 
-    httpMock.expectOne('/api/v1/factorization').flush(successResponse());
+    httpMock.expectOne(`${API_BASE_PATH}/factorization`).flush(successResponse());
 
     expect(received?.original).toEqual([[1, 2], [3, 4]]);
     expect(received?.statistics.q.isDiagonal).toBe(true);

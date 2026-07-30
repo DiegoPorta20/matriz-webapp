@@ -9,6 +9,16 @@ RUN npm ci --ignore-scripts
 
 COPY . .
 
+# La URL de la API se resuelve al compilar, porque una SPA no tiene entorno de
+# ejecucion en el servidor. Por eso es un ARG y no una variable del contenedor:
+# ponerla en `docker run` no tendria ningun efecto.
+#
+# El valor por defecto apunta a localhost y no a go-api:8080, y no es un
+# descuido: quien hace la peticion es el navegador del usuario, que corre en el
+# host y no dentro de la red de Docker. Ahi `go-api` no resuelve.
+ARG API_BASE_URL=http://localhost:8080/api/v1
+ENV API_BASE_URL=${API_BASE_URL}
+
 RUN npm run build
 
 # nginx-unprivileged corre como uid 101 de principio a fin. La imagen nginx

@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { LoginPage } from './login.page';
+import { API_BASE_PATH } from '../../../core/config/api.config';
 
 const tokenResponse = {
   success: true,
@@ -57,7 +58,7 @@ describe('LoginPage', () => {
   it('no llama a la API con el formulario vacio', () => {
     component.submit();
 
-    httpMock.expectNone('/api/v1/auth/login');
+    httpMock.expectNone(`${API_BASE_PATH}/auth/login`);
     expect(component.form.touched).toBe(true);
   });
 
@@ -66,7 +67,7 @@ describe('LoginPage', () => {
 
     component.submit();
 
-    httpMock.expectNone('/api/v1/auth/login');
+    httpMock.expectNone(`${API_BASE_PATH}/auth/login`);
     expect(component.isSubmitting()).toBe(false);
   });
 
@@ -75,7 +76,7 @@ describe('LoginPage', () => {
 
     component.submit();
 
-    const request = httpMock.expectOne('/api/v1/auth/login');
+    const request = httpMock.expectOne(`${API_BASE_PATH}/auth/login`);
     expect(request.request.body).toEqual({ username: 'demo', password: 'secret' });
     request.flush(tokenResponse);
 
@@ -89,7 +90,7 @@ describe('LoginPage', () => {
     component.submit();
 
     httpMock
-      .expectOne('/api/v1/auth/login')
+      .expectOne(`${API_BASE_PATH}/auth/login`)
       .flush(
         { success: false, message: 'Invalid username or password', errors: [] },
         { status: 401, statusText: 'Unauthorized' },
@@ -105,7 +106,7 @@ describe('LoginPage', () => {
 
     component.submit();
 
-    httpMock.expectOne('/api/v1/auth/login').error(new ProgressEvent('error'), { status: 0 });
+    httpMock.expectOne(`${API_BASE_PATH}/auth/login`).error(new ProgressEvent('error'), { status: 0 });
 
     expect(component.errorMessage()).toContain('conexión');
   });
@@ -116,7 +117,7 @@ describe('LoginPage', () => {
     component.submit();
     expect(component.isSubmitting()).toBe(true);
 
-    httpMock.expectOne('/api/v1/auth/login').flush(tokenResponse);
+    httpMock.expectOne(`${API_BASE_PATH}/auth/login`).flush(tokenResponse);
   });
 
   it('ignora un segundo envio mientras el primero esta en vuelo', () => {
@@ -125,7 +126,7 @@ describe('LoginPage', () => {
     component.submit();
     component.submit();
 
-    httpMock.expectOne('/api/v1/auth/login').flush(tokenResponse);
+    httpMock.expectOne(`${API_BASE_PATH}/auth/login`).flush(tokenResponse);
     expect(navigateSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -133,7 +134,7 @@ describe('LoginPage', () => {
     fillForm('demo', 'wrong');
     component.submit();
     httpMock
-      .expectOne('/api/v1/auth/login')
+      .expectOne(`${API_BASE_PATH}/auth/login`)
       .flush({ success: false, message: 'Invalid username or password', errors: [] }, { status: 401, statusText: 'x' });
     expect(component.errorMessage()).not.toBeNull();
 
@@ -141,6 +142,6 @@ describe('LoginPage', () => {
     component.submit();
 
     expect(component.errorMessage()).toBeNull();
-    httpMock.expectOne('/api/v1/auth/login').flush(tokenResponse);
+    httpMock.expectOne(`${API_BASE_PATH}/auth/login`).flush(tokenResponse);
   });
 });

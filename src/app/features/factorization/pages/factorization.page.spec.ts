@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { FactorizationPage } from './factorization.page';
+import { API_BASE_PATH } from '../../../core/config/api.config';
 
 const successBody = {
   success: true,
@@ -57,14 +58,14 @@ describe('FactorizationPage', () => {
 
     expect(component.isLoading()).toBe(true);
 
-    httpMock.expectOne('/api/v1/factorization').flush(successBody);
+    httpMock.expectOne(`${API_BASE_PATH}/factorization`).flush(successBody);
 
     expect(component.isLoading()).toBe(false);
   });
 
   it('publica el resultado que devuelve la API', () => {
     component.factorize([[1, 2], [3, 4]]);
-    httpMock.expectOne('/api/v1/factorization').flush(successBody);
+    httpMock.expectOne(`${API_BASE_PATH}/factorization`).flush(successBody);
 
     expect(component.result()?.q).toEqual([[1, 0], [0, 1]]);
     expect(component.result()?.statistics.r.sum).toBe(18);
@@ -73,7 +74,7 @@ describe('FactorizationPage', () => {
 
   it('expone el error con sus detalles', () => {
     component.factorize([[1, 2], [3]]);
-    httpMock.expectOne('/api/v1/factorization').flush(
+    httpMock.expectOne(`${API_BASE_PATH}/factorization`).flush(
       {
         success: false,
         message: 'Invalid matrix',
@@ -90,12 +91,12 @@ describe('FactorizationPage', () => {
 
   it('descarta el resultado anterior cuando la petición falla', () => {
     component.factorize([[1, 2], [3, 4]]);
-    httpMock.expectOne('/api/v1/factorization').flush(successBody);
+    httpMock.expectOne(`${API_BASE_PATH}/factorization`).flush(successBody);
     expect(component.result()).not.toBeNull();
 
     component.factorize([[1, 2], [3]]);
     httpMock
-      .expectOne('/api/v1/factorization')
+      .expectOne(`${API_BASE_PATH}/factorization`)
       .flush({ success: false, message: 'Invalid matrix', errors: [] }, { status: 422, statusText: 'x' });
 
     expect(component.result()).toBeNull();
@@ -104,12 +105,12 @@ describe('FactorizationPage', () => {
   it('limpia el error al reintentar con éxito', () => {
     component.factorize([[1, 2], [3]]);
     httpMock
-      .expectOne('/api/v1/factorization')
+      .expectOne(`${API_BASE_PATH}/factorization`)
       .flush({ success: false, message: 'Invalid matrix', errors: [] }, { status: 422, statusText: 'x' });
     expect(component.error()).not.toBeNull();
 
     component.factorize([[1, 2], [3, 4]]);
-    httpMock.expectOne('/api/v1/factorization').flush(successBody);
+    httpMock.expectOne(`${API_BASE_PATH}/factorization`).flush(successBody);
 
     expect(component.error()).toBeNull();
     expect(component.result()).not.toBeNull();
