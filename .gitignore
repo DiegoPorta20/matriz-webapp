@@ -51,3 +51,6 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Generado por scripts/set-api-base-url.mjs a partir de API_BASE_URL.
+/src/environments/environment.ts

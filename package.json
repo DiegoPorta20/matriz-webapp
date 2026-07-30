@@ -9,7 +9,13 @@
     "test": "ng test",
     "lint": "ng lint",
     "format": "prettier --write \"src/**/*.{ts,html,scss}\"",
-    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessCI"
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessCI",
+    "config:env": "node scripts/set-api-base-url.mjs",
+    "prebuild": "npm run config:env",
+    "prestart": "npm run config:env",
+    "pretest": "npm run config:env",
+    "pretest:ci": "npm run config:env",
+    "prelint": "npm run config:env"
   },
   "prettier": {
     "printWidth": 100,
