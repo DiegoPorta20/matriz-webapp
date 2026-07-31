@@ -17,7 +17,12 @@ permissions:
 
 env:
   NODE_VERSION: '22'
-  AWS_REGION: 'us-east-1'
+  AWS_REGION: ${{ vars.AWS_REGION || secrets.AWS_REGION || 'us-east-1' }}
+  S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BUCKET }}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID || secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+  AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN || secrets.AWS_DEPLOY_ROLE_ARN }}
+  API_BASE_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
+  PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL || secrets.PUBLIC_BASE_URL }}
 
 jobs:
   verify:
@@ -77,7 +82,7 @@ jobs:
 
       - name: Construir la SPA
         env:
-          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          API_BASE_URL: ${{ env.API_BASE_URL }}
         run: |
           npm ci
           npm run build
@@ -85,25 +90,25 @@ jobs:
       - name: Validar variables de despliegue
         run: |
           set -euo pipefail
-          if [ -z "${{ vars.S3_BUCKET }}" ]; then
-            echo "Falta la variable S3_BUCKET en GitHub Actions."
+          if [ -z "$S3_BUCKET" ]; then
+            echo "Falta la variable S3_BUCKET en GitHub Actions (Variables o Secrets)."
             exit 1
           fi
-          if [ -z "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
-            echo "Falta la variable CLOUDFRONT_DISTRIBUTION_ID en GitHub Actions."
+          if [ -z "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            echo "Falta la variable CLOUDFRONT_DISTRIBUTION_ID en GitHub Actions (Variables o Secrets)."
             exit 1
           fi
 
       - name: Autenticar en AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: gha-deploy-frontend-${{ github.run_id }}
 
       - name: Subir los ficheros con hash
         run: |
-          aws s3 sync dist/frontend/browser "s3://${{ vars.S3_BUCKET }}" \
+          aws s3 sync dist/frontend/browser "s3://$S3_BUCKET" \
             --exclude index.html \
             --cache-control 'public, max-age=31536000, immutable' \
             --delete
@@ -111,13 +116,13 @@ jobs:
       - name: Subir index.html sin cachear
         run: |
           aws s3 cp dist/frontend/browser/index.html \
-            "s3://${{ vars.S3_BUCKET }}/index.html" \
+            "s3://$S3_BUCKET/index.html" \
             --cache-control 'no-cache, no-store, must-revalidate'
 
       - name: Invalidar CloudFront
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id '${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}' \
+            --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
             --paths '/index.html' '/' \
             --no-cli-pager
 
@@ -131,19 +136,19 @@ jobs:
       - name: La SPA se sirve
         run: |
           curl -fsS --retry 5 --retry-delay 5 -o /dev/null \
-            "${{ vars.PUBLIC_BASE_URL }}/"
+            "$PUBLIC_BASE_URL/"
 
       - name: Una ruta profunda devuelve la SPA y no un 404
         run: |
           codigo=$(curl -s -o /dev/null -w '%{http_code}' \
-            "${{ vars.PUBLIC_BASE_URL }}/factorization")
+            "$PUBLIC_BASE_URL/factorization")
           echo "GET /factorization -> $codigo"
           [ "$codigo" = "200" ] || exit 1
 
       - name: Los headers de seguridad estan presentes
         run: |
           set -euo pipefail
-          headers=$(curl -sI "${{ vars.PUBLIC_BASE_URL }}/")
+          headers=$(curl -sI "$PUBLIC_BASE_URL/")
           for h in x-content-type-options x-frame-options referrer-policy content-security-policy; do
             echo "$headers" | grep -qi "^$h:" || { echo "Falta el header $h"; exit 1; }
           done
@@ -152,12 +157,12 @@ jobs:
       - name: La SPA puede llamar a la API desde su origen
         run: |
           set -euo pipefail
-          respuesta=$(curl -sI -X OPTIONS "${{ vars.API_BASE_URL }}/factorization" \
-            -H "Origin: ${{ vars.PUBLIC_BASE_URL }}" \
+          respuesta=$(curl -sI -X OPTIONS "$API_BASE_URL/factorization" \
+            -H "Origin: $PUBLIC_BASE_URL" \
             -H 'Access-Control-Request-Method: POST' \
             -H 'Access-Control-Request-Headers: authorization,content-type')
 
           echo "$respuesta" | grep -qi 'access-control-allow-origin' \
-            || { echo "go-api no permite el origen ${{ vars.PUBLIC_BASE_URL }}"; exit 1; }
+            || { echo "go-api no permite el origen $PUBLIC_BASE_URL"; exit 1; }
 
           echo "CORS configurado correctamente"
