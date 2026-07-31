@@ -1,62 +1,74 @@
-<main class="login">
-  <mat-card class="login__card">
-    <mat-card-header>
-      <mat-card-title>Factorización QR</mat-card-title>
-      <mat-card-subtitle>Inicia sesión para continuar</mat-card-subtitle>
-    </mat-card-header>
+<main class="flex min-h-screen items-center justify-center px-4 py-10">
+  <div class="w-full max-w-sm">
+    <div class="card p-6 sm:p-8">
+      <div class="flex items-center gap-3">
+        <span class="flex size-10 items-center justify-center rounded-lg bg-blue-700 text-white">
+          <i class="material-icons text-2xl" aria-hidden="true">functions</i>
+        </span>
+        <div>
+          <h1 class="text-lg font-semibold text-slate-900">Factorización QR</h1>
+          <p class="text-sm text-slate-500">Inicia sesión para continuar</p>
+        </div>
+      </div>
 
-    @if (isSubmitting()) {
-      <mat-progress-bar mode="indeterminate" aria-label="Verificando credenciales" />
-    }
-
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <mat-form-field appearance="outline">
-          <mat-label for="username">Usuario</mat-label>
+      <form class="mt-7 space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-slate-700" for="username">
+            Usuario
+          </label>
           <input
             id="username"
-            matInput
+            class="input"
             type="text"
             formControlName="username"
             autocomplete="username"
             required
           />
           @if (form.controls.username.touched && form.controls.username.invalid) {
-            <mat-error>El usuario es obligatorio</mat-error>
+            <p class="mt-1.5 text-sm text-red-600">El usuario es obligatorio</p>
           }
-        </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label for="password">Contraseña</mat-label>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-slate-700" for="password">
+            Contraseña
+          </label>
           <input
             id="password"
-            matInput
+            class="input"
             type="password"
             formControlName="password"
             autocomplete="current-password"
             required
           />
           @if (form.controls.password.touched && form.controls.password.invalid) {
-            <mat-error>La contraseña es obligatoria</mat-error>
+            <p class="mt-1.5 text-sm text-red-600">La contraseña es obligatoria</p>
           }
-        </mat-form-field>
+        </div>
 
         @if (errorMessage()) {
-          <p class="login__error" role="alert">
-            <mat-icon aria-hidden="true">error_outline</mat-icon>
+          <p
+            class="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+            role="alert"
+          >
+            <i class="material-icons mt-0.5 text-base" aria-hidden="true">error</i>
             {{ errorMessage() }}
           </p>
         }
 
-        <button
-          matButton="filled"
-          type="submit"
-          class="login__submit"
-          [disabled]="isSubmitting()"
-        >
-          Entrar
+        <button class="btn btn-primary w-full" type="submit" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Entrando…
+          } @else {
+            Entrar
+          }
         </button>
       </form>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+    <p class="mt-6 text-center text-xs text-slate-400">
+      La sesión se guarda solo en esta pestaña y se cierra al salir.
+    </p>
+  </div>
 </main>

@@ -72,7 +72,7 @@ describe('StatisticsCardComponent', () => {
     render(statistics({ isDiagonal: true }));
 
     const diagonal = fixture.nativeElement.querySelector('.statistics__diagonal') as HTMLElement;
-    expect(diagonal.querySelector('mat-icon')).not.toBeNull();
+    expect(diagonal.querySelector('.material-icons')).not.toBeNull();
     expect((diagonal.querySelector('span')?.textContent ?? '').trim()).toBe('Sí');
   });
 

@@ -1,38 +1,34 @@
-<mat-card class="statistics" appearance="outlined">
-  <mat-card-header>
-    <mat-card-title>{{ title() }}</mat-card-title>
-  </mat-card-header>
+<div class="card h-full p-5">
+  <h3 class="text-sm font-semibold text-slate-900">{{ title() }}</h3>
 
-  <mat-card-content>
-    <dl class="statistics__list">
-      <div class="statistics__item">
-        <dt>Máximo</dt>
-        <dd>{{ statistics().max | matrixNumber }}</dd>
-      </div>
-      <div class="statistics__item">
-        <dt>Mínimo</dt>
-        <dd>{{ statistics().min | matrixNumber }}</dd>
-      </div>
-      <div class="statistics__item">
-        <dt>Promedio</dt>
-        <dd>{{ statistics().average | matrixNumber }}</dd>
-      </div>
-      <div class="statistics__item">
-        <dt>Suma</dt>
-        <dd>{{ statistics().sum | matrixNumber }}</dd>
-      </div>
-      <div class="statistics__item">
-        <dt>Diagonal</dt>
-        <dd class="statistics__diagonal">
-          @if (statistics().isDiagonal) {
-            <mat-icon class="statistics__icon--yes" aria-hidden="true">check_circle</mat-icon>
-            <span>Sí</span>
-          } @else {
-            <mat-icon class="statistics__icon--no" aria-hidden="true">cancel</mat-icon>
-            <span>No</span>
-          }
-        </dd>
-      </div>
-    </dl>
-  </mat-card-content>
-</mat-card>
+  <dl class="mt-3 divide-y divide-slate-100">
+    <div class="statistics__item flex items-center justify-between gap-4 py-2.5">
+      <dt class="text-sm text-slate-500">Máximo</dt>
+      <dd class="text-sm font-medium tabular-nums">{{ statistics().max | matrixNumber }}</dd>
+    </div>
+    <div class="statistics__item flex items-center justify-between gap-4 py-2.5">
+      <dt class="text-sm text-slate-500">Mínimo</dt>
+      <dd class="text-sm font-medium tabular-nums">{{ statistics().min | matrixNumber }}</dd>
+    </div>
+    <div class="statistics__item flex items-center justify-between gap-4 py-2.5">
+      <dt class="text-sm text-slate-500">Promedio</dt>
+      <dd class="text-sm font-medium tabular-nums">{{ statistics().average | matrixNumber }}</dd>
+    </div>
+    <div class="statistics__item flex items-center justify-between gap-4 py-2.5">
+      <dt class="text-sm text-slate-500">Suma</dt>
+      <dd class="text-sm font-medium tabular-nums">{{ statistics().sum | matrixNumber }}</dd>
+    </div>
+    <div class="statistics__item flex items-center justify-between gap-4 py-2.5">
+      <dt class="text-sm text-slate-500">Diagonal</dt>
+      <dd class="statistics__diagonal flex items-center gap-1.5 text-sm font-medium">
+        @if (statistics().isDiagonal) {
+          <i class="material-icons text-base text-emerald-600" aria-hidden="true">check_circle</i>
+          <span>Sí</span>
+        } @else {
+          <i class="material-icons text-base text-slate-300" aria-hidden="true">cancel</i>
+          <span class="text-slate-500">No</span>
+        }
+      </dd>
+    </div>
+  </dl>
+</div>

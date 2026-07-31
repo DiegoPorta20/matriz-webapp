@@ -1,23 +1,29 @@
-<figure class="matrix">
-  <figcaption class="matrix__caption">
-    <span class="matrix__title">{{ title() }}</span>
-    <span class="matrix__dimensions">{{ dimensions() }}</span>
+<figure class="m-0">
+  <figcaption class="flex items-baseline gap-2">
+    <span class="matrix__title text-sm font-semibold text-slate-900">{{ title() }}</span>
+    <span class="matrix__dimensions text-xs tabular-nums text-slate-500">{{ dimensions() }}</span>
   </figcaption>
 
   @if (description()) {
-    <p class="matrix__description">{{ description() }}</p>
+    <p class="matrix__description mt-0.5 text-xs text-slate-500">{{ description() }}</p>
   }
 
-  <div class="matrix__scroll">
-    <table class="matrix__table">
-      <caption class="visually-hidden">
-        {{ title() }}, {{ dimensions() }}
+  <div class="mt-3 overflow-x-auto">
+    <table class="border-collapse text-sm tabular-nums">
+      <caption class="sr-only">
+        {{
+          tableDescription()
+        }}
       </caption>
       <tbody>
-        @for (row of matrix(); track $index; let rowIndex = $index) {
+        @for (row of matrix(); track $index) {
           <tr>
             @for (value of row; track $index) {
-              <td>{{ value | matrixNumber }}</td>
+              <td
+                class="min-w-20 border border-slate-200 px-3 py-1.5 text-right whitespace-nowrap text-slate-700"
+              >
+                {{ value | matrixNumber }}
+              </td>
             }
           </tr>
         }

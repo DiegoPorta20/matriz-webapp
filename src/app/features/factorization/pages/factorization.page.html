@@ -1,58 +1,78 @@
-<div class="page-container">
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <mat-card-title>Matriz de entrada</mat-card-title>
-      <mat-card-subtitle>
-        Edita los valores y ajusta las dimensiones antes de factorizar
-      </mat-card-subtitle>
-    </mat-card-header>
+<div class="mx-auto max-w-6xl px-4 py-8">
+  <header>
+    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Factorización QR</h1>
+    <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
+      Una matriz <b class="font-semibold">A</b> se descompone en el producto
+      <b class="font-semibold">A = Q · R</b>, donde <b class="font-semibold">Q</b> es ortogonal y
+      <b class="font-semibold">R</b> triangular superior. Escribe tu matriz, ajusta sus dimensiones
+      y calcula.
+    </p>
+  </header>
 
-    <mat-card-content>
+  <section class="card mt-6 p-5 sm:p-6">
+    <h2 class="text-base font-semibold text-slate-900">Matriz de entrada</h2>
+    <p class="mt-1 text-sm text-slate-500">
+      Edita los valores y ajusta las dimensiones antes de factorizar.
+    </p>
+
+    <div class="mt-5">
       <app-matrix-editor [isBusy]="isLoading()" (factorize)="factorize($event)" />
-    </mat-card-content>
-  </mat-card>
+    </div>
+  </section>
 
   @if (isLoading()) {
-    <mat-progress-bar mode="indeterminate" aria-label="Calculando la factorización" />
+    <div class="mt-6">
+      <div class="loading-bar" role="status" aria-label="Calculando la factorización"></div>
+      <p class="mt-2 text-sm text-slate-500">Calculando la factorización…</p>
+    </div>
   }
 
   @if (error(); as apiError) {
-    <mat-card class="results__error" appearance="outlined" role="alert">
-      <mat-card-content>
-        <p class="results__error-title">
-          <mat-icon aria-hidden="true">error_outline</mat-icon>
-          {{ apiError.message }}
-        </p>
-        @if (apiError.details.length > 0) {
-          <ul class="results__error-details">
-            @for (detail of apiError.details; track detail) {
-              <li>{{ detail }}</li>
-            }
-          </ul>
-        }
-      </mat-card-content>
-    </mat-card>
+    <div class="card mt-6 border-red-200 bg-red-50 p-5" role="alert">
+      <p class="flex items-center gap-2 text-sm font-medium text-red-700">
+        <i class="material-icons text-base" aria-hidden="true">error</i>
+        {{ apiError.message }}
+      </p>
+      @if (apiError.details.length > 0) {
+        <ul class="mt-2 list-disc space-y-1 pl-9 text-sm text-red-700">
+          @for (detail of apiError.details; track detail) {
+            <li>{{ detail }}</li>
+          }
+        </ul>
+      }
+    </div>
   }
 
   @if (result(); as factorization) {
-    <section class="results" aria-label="Resultado de la factorización">
-      <div class="results__matrices">
-        <app-matrix-view title="Matriz original" [matrix]="factorization.original" />
-        <app-matrix-view
-          title="Q"
-          description="Matriz ortogonal"
-          [matrix]="factorization.q"
-        />
-        <app-matrix-view
-          title="R"
-          description="Matriz triangular superior"
-          [matrix]="factorization.r"
-        />
+    <section class="mt-8" aria-label="Resultado de la factorización">
+      <h2 class="text-base font-semibold text-slate-900">Resultado</h2>
+
+      <div class="mt-4 grid gap-4 lg:grid-cols-3">
+        <div class="card p-5">
+          <app-matrix-view
+            title="A"
+            description="Matriz original"
+            [matrix]="factorization.original"
+          />
+        </div>
+        <div class="card p-5">
+          <app-matrix-view title="Q" description="Matriz ortogonal" [matrix]="factorization.q" />
+        </div>
+        <div class="card p-5">
+          <app-matrix-view
+            title="R"
+            description="Matriz triangular superior"
+            [matrix]="factorization.r"
+          />
+        </div>
       </div>
 
-      <div class="results__statistics">
-        <app-statistics-card title="Estadísticas de Q" [statistics]="factorization.statistics.q" />
-        <app-statistics-card title="Estadísticas de R" [statistics]="factorization.statistics.r" />
+      <h2 class="mt-8 text-base font-semibold text-slate-900">Estadísticas</h2>
+      <p class="mt-1 text-sm text-slate-500">Calculadas por el servicio de estadísticas.</p>
+
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <app-statistics-card title="Q" [statistics]="factorization.statistics.q" />
+        <app-statistics-card title="R" [statistics]="factorization.statistics.r" />
       </div>
     </section>
   }

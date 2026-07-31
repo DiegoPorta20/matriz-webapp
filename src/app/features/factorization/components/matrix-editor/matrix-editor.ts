@@ -1,10 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { MATRIX_MAX_DIMENSION } from '../../../../core/config/api.config';
 import { finiteNumberValidator } from '../../../../shared/validators/matrix.validators';
@@ -20,16 +15,8 @@ const INITIAL_MATRIX = [
 @Component({
   selector: 'app-matrix-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
-    MatTooltipModule,
-  ],
+  imports: [ReactiveFormsModule],
   templateUrl: './matrix-editor.html',
-  styleUrl: './matrix-editor.scss',
 })
 export class MatrixEditorComponent {
   readonly isBusy = input(false);
@@ -51,7 +38,22 @@ export class MatrixEditorComponent {
   );
   readonly canRemoveColumn = computed(() => this.columnCount() > 1);
 
-  readonly maxDimension = MATRIX_MAX_DIMENSION;
+  // Explica el limite alcanzado en lugar de dejar un boton deshabilitado sin motivo visible:
+  // los tooltips que hacian esto antes no llegaban a mostrarse sobre un boton deshabilitado.
+  readonly hint = computed(() => {
+    const max = String(MATRIX_MAX_DIMENSION);
+
+    if (!this.canAddRow() && !this.canAddColumn()) {
+      return `Has alcanzado el tamaño máximo de ${max} × ${max}.`;
+    }
+    if (!this.canAddColumn()) {
+      return 'Para añadir una columna, añade primero una fila: la factorización QR necesita al menos tantas filas como columnas.';
+    }
+    if (!this.canAddRow()) {
+      return `No puedes pasar de ${max} filas.`;
+    }
+    return 'La factorización QR necesita al menos tantas filas como columnas.';
+  });
 
   constructor() {
     INITIAL_MATRIX.forEach((row) => {

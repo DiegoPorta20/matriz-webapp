@@ -8,7 +8,6 @@ import type { Matrix } from '../../models/factorization.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatrixNumberPipe],
   templateUrl: './matrix-view.html',
-  styleUrl: './matrix-view.scss',
 })
 export class MatrixViewComponent {
   readonly title = input.required<string>();
@@ -20,4 +19,6 @@ export class MatrixViewComponent {
     const columns = matrix.length > 0 ? matrix[0].length : 0;
     return `${String(matrix.length)} × ${String(columns)}`;
   });
+
+  readonly tableDescription = computed(() => `${this.title()}, ${this.dimensions()}`);
 }

@@ -11,9 +11,6 @@ module.exports = function (config) {
     reporters: ['progress', 'kjhtml'],
     browsers: ['ChromeHeadless'],
     restartOnFileChange: true,
-    // Chrome dentro del contenedor de un runner no puede usar su sandbox, que
-    // depende de privilegios que ahi no existen. Funciona igual en local, asi que
-    // hay un solo launcher para las dos situaciones.
     customLaunchers: {
       ChromeHeadlessCI: {
         base: 'ChromeHeadless',

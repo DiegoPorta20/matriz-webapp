@@ -1,96 +1,87 @@
 <form [formGroup]="form" (ngSubmit)="submit()">
-  <div class="editor__toolbar" role="group" aria-label="Dimensiones de la matriz">
-    <span class="editor__dimensions" aria-live="polite">
-      {{ rows() }} &times; {{ columns() }}
-    </span>
-
-    <div class="editor__actions">
-      <button
-        matButton="outlined"
-        type="button"
-        (click)="addRow()"
-        [disabled]="!canAddRow()"
-        [matTooltip]="
-          canAddRow() ? 'Añadir una fila' : 'Máximo ' + maxDimension + ' filas'
-        "
-      >
-        <mat-icon aria-hidden="true">add</mat-icon>
-        Fila
-      </button>
-
-      <button
-        matButton="outlined"
-        type="button"
-        (click)="removeRow()"
-        [disabled]="!canRemoveRow()"
-        [matTooltip]="
-          canRemoveRow()
-            ? 'Eliminar la última fila'
-            : 'La factorización QR necesita al menos tantas filas como columnas'
-        "
-      >
-        <mat-icon aria-hidden="true">remove</mat-icon>
-        Fila
-      </button>
-
-      <button
-        matButton="outlined"
-        type="button"
-        (click)="addColumn()"
-        [disabled]="!canAddColumn()"
-        [matTooltip]="
-          canAddColumn()
-            ? 'Añadir una columna'
-            : 'Añade primero una fila: la factorización QR necesita filas ≥ columnas'
-        "
-      >
-        <mat-icon aria-hidden="true">add</mat-icon>
-        Columna
-      </button>
-
-      <button
-        matButton="outlined"
-        type="button"
-        (click)="removeColumn()"
-        [disabled]="!canRemoveColumn()"
-        [matTooltip]="
-          canRemoveColumn() ? 'Eliminar la última columna' : 'La matriz necesita una columna'
-        "
-      >
-        <mat-icon aria-hidden="true">remove</mat-icon>
-        Columna
-      </button>
+  <div class="flex flex-wrap items-end gap-x-8 gap-y-4">
+    <div>
+      <p class="mb-1.5 text-sm font-medium text-slate-700" id="rows-label">Filas</p>
+      <div class="flex items-center gap-1.5" role="group" aria-labelledby="rows-label">
+        <button
+          class="btn-step"
+          type="button"
+          aria-label="Quitar una fila"
+          [disabled]="!canRemoveRow()"
+          (click)="removeRow()"
+        >
+          <i class="material-icons text-lg" aria-hidden="true">remove</i>
+        </button>
+        <span class="w-8 text-center text-base font-semibold tabular-nums">{{ rows() }}</span>
+        <button
+          class="btn-step"
+          type="button"
+          aria-label="Añadir una fila"
+          [disabled]="!canAddRow()"
+          (click)="addRow()"
+        >
+          <i class="material-icons text-lg" aria-hidden="true">add</i>
+        </button>
+      </div>
     </div>
+
+    <div>
+      <p class="mb-1.5 text-sm font-medium text-slate-700" id="columns-label">Columnas</p>
+      <div class="flex items-center gap-1.5" role="group" aria-labelledby="columns-label">
+        <button
+          class="btn-step"
+          type="button"
+          aria-label="Quitar una columna"
+          [disabled]="!canRemoveColumn()"
+          (click)="removeColumn()"
+        >
+          <i class="material-icons text-lg" aria-hidden="true">remove</i>
+        </button>
+        <span class="w-8 text-center text-base font-semibold tabular-nums">{{ columns() }}</span>
+        <button
+          class="btn-step"
+          type="button"
+          aria-label="Añadir una columna"
+          [disabled]="!canAddColumn()"
+          (click)="addColumn()"
+        >
+          <i class="material-icons text-lg" aria-hidden="true">add</i>
+        </button>
+      </div>
+    </div>
+
+    <p class="sr-only" aria-live="polite">Matriz de {{ rows() }} por {{ columns() }}</p>
   </div>
 
-  <div class="editor__grid" formArrayName="grid">
-    @for (row of grid.controls; track $index; let rowIndex = $index) {
-      <div class="editor__row" [formArrayName]="rowIndex">
-        @for (cell of row.controls; track $index; let columnIndex = $index) {
-          <mat-form-field appearance="outline" class="editor__cell" subscriptSizing="dynamic">
+  <p class="mt-3 text-xs text-slate-500">{{ hint() }}</p>
+
+  <div class="mt-5 overflow-x-auto pb-1" formArrayName="grid">
+    <div class="inline-flex flex-col gap-1.5">
+      @for (row of grid.controls; track $index; let rowIndex = $index) {
+        <div class="flex gap-1.5" [formArrayName]="rowIndex">
+          @for (cell of row.controls; track $index; let columnIndex = $index) {
             <input
-              matInput
+              class="matrix-cell"
               type="number"
               step="any"
               [formControlName]="columnIndex"
-              [attr.aria-label]="
-                'Fila ' + (rowIndex + 1) + ', columna ' + (columnIndex + 1)
-              "
+              [attr.aria-label]="'Fila ' + (rowIndex + 1) + ', columna ' + (columnIndex + 1)"
             />
-          </mat-form-field>
-        }
-      </div>
-    }
+          }
+        </div>
+      }
+    </div>
   </div>
 
   @if (form.invalid && form.touched) {
-    <p class="editor__error" role="alert">
+    <p class="mt-3 flex items-center gap-2 text-sm text-red-600" role="alert">
+      <i class="material-icons text-base" aria-hidden="true">error</i>
       Todas las celdas deben contener un número finito.
     </p>
   }
 
-  <button matButton="filled" type="submit" [disabled]="isBusy()">
-    <mat-icon aria-hidden="true">functions</mat-icon>
+  <button class="btn btn-primary mt-6" type="submit" [disabled]="isBusy()">
+    <i class="material-icons text-lg" aria-hidden="true">functions</i>
     Factorizar
   </button>
 </form>
