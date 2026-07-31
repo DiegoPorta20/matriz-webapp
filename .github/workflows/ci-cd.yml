@@ -17,6 +17,7 @@ permissions:
 
 env:
   NODE_VERSION: '22'
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
 
 jobs:
   verify:
@@ -85,7 +86,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
           role-session-name: gha-deploy-frontend-${{ github.run_id }}
 
       - name: Subir los ficheros con hash
