@@ -5,6 +5,14 @@ const DEFAULT_API_BASE_URL = 'http://localhost:8080/api/v1';
 
 const VALID_API_BASE_URL = /^(https?:\/\/[^\s'"`]+|\/[^\s'"`]*)$/;
 
+// El .env es opcional y solo cubre el desarrollo local. loadEnvFile no sobrescribe lo que ya
+// existe en el entorno, asi que la variable que pasa el despliegue o CI sigue teniendo prioridad.
+try {
+  process.loadEnvFile(resolve(import.meta.dirname, '../.env'));
+} catch {
+  // Sin .env se usa la variable de entorno o el valor por defecto.
+}
+
 const apiBaseUrl = (process.env.API_BASE_URL ?? '').trim() || DEFAULT_API_BASE_URL;
 
 if (!VALID_API_BASE_URL.test(apiBaseUrl)) {
