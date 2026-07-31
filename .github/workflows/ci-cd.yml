@@ -82,12 +82,36 @@ jobs:
           npm ci
           npm run build
 
-      - name: Autenticar en AWS
+      - name: Validar configuración de despliegue AWS
+        run: |
+          set -euo pipefail
+          if [ -n "${{ vars.AWS_DEPLOY_ROLE_ARN }}" ]; then
+            echo "Usando autenticación OIDC para AWS."
+          elif [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ] && [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            echo "Usando credenciales estáticas de AWS."
+          else
+            echo "No hay configuración válida de AWS para el despliegue."
+            echo "Define una de estas opciones en GitHub:" 
+            echo "  - Variable: AWS_DEPLOY_ROLE_ARN (OIDC)"
+            echo "  - Secrets: AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY"
+            exit 1
+          fi
+
+      - name: Autenticar en AWS con OIDC
+        if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: gha-deploy-frontend-${{ github.run_id }}
+
+      - name: Autenticar en AWS con credenciales estáticas
+        if: ${{ vars.AWS_DEPLOY_ROLE_ARN == '' && secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Subir los ficheros con hash
         run: |
