@@ -17,7 +17,7 @@ permissions:
 
 env:
   NODE_VERSION: '22'
-  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  AWS_REGION: 'us-east-1'
 
 jobs:
   verify:
@@ -82,7 +82,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: Validar variables y salida del build
+      - name: Validar variables de despliegue
         run: |
           set -euo pipefail
           if [ -z "${{ vars.S3_BUCKET }}" ]; then
@@ -94,60 +94,23 @@ jobs:
             exit 1
           fi
 
-          if [ -d dist/frontend/browser ]; then
-            echo "DIST_PATH=dist/frontend/browser" >> "$GITHUB_ENV"
-          elif [ -d dist/frontend ]; then
-            echo "DIST_PATH=dist/frontend" >> "$GITHUB_ENV"
-          else
-            echo "No se encontró la carpeta de salida del build."
-            echo "Contenido de dist:"
-            find dist -maxdepth 3 -type d 2>/dev/null | sort || true
-            exit 1
-          fi
-
-          echo "Usando carpeta de despliegue: ${DIST_PATH}"
-
-      - name: Validar configuración de despliegue AWS
-        run: |
-          set -euo pipefail
-          if [ -n "${{ vars.AWS_DEPLOY_ROLE_ARN }}" ]; then
-            echo "Usando autenticación OIDC para AWS."
-          elif [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ] && [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
-            echo "Usando credenciales estáticas de AWS."
-          else
-            echo "No hay configuración válida de AWS para el despliegue."
-            echo "Define una de estas opciones en GitHub:" 
-            echo "  - Variable: AWS_DEPLOY_ROLE_ARN (OIDC)"
-            echo "  - Secrets: AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY"
-            exit 1
-          fi
-
-      - name: Autenticar en AWS con OIDC
-        if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
+      - name: Autenticar en AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: gha-deploy-frontend-${{ github.run_id }}
 
-      - name: Autenticar en AWS con credenciales estáticas
-        if: ${{ vars.AWS_DEPLOY_ROLE_ARN == '' && secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
       - name: Subir los ficheros con hash
         run: |
-          aws s3 sync "${DIST_PATH}" "s3://${{ vars.S3_BUCKET }}" \
+          aws s3 sync dist/frontend/browser "s3://${{ vars.S3_BUCKET }}" \
             --exclude index.html \
             --cache-control 'public, max-age=31536000, immutable' \
             --delete
 
       - name: Subir index.html sin cachear
         run: |
-          aws s3 cp "${DIST_PATH}/index.html" \
+          aws s3 cp dist/frontend/browser/index.html \
             "s3://${{ vars.S3_BUCKET }}/index.html" \
             --cache-control 'no-cache, no-store, must-revalidate'
 
